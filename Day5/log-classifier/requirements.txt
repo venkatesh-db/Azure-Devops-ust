@@ -1,0 +1,5 @@
+# Python dependencies
+flask
+joblib
+scikit-learn
+azureml-sdk

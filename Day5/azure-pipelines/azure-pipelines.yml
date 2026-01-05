@@ -1,0 +1,38 @@
+trigger:
+- main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  RESOURCE_PREFIX: 'log'
+  LOCATION: 'East US'
+
+stages:
+- stage: TerraformInit
+  jobs:
+  - job: Init
+    steps:
+    - task: UsePythonVersion@1
+      inputs:
+        versionSpec: '3.x'
+    - script: |
+        sudo apt-get update
+        sudo apt-get install -y unzip
+        curl -o terraform.zip https://releases.hashicorp.com/terraform/1.5.0/terraform_1.5.0_linux_amd64.zip
+        unzip terraform.zip
+        sudo mv terraform /usr/local/bin/
+      displayName: 'Install Terraform'
+    - script: |
+        terraform init
+      workingDirectory: terraform
+      displayName: 'Initialize Terraform'
+
+- stage: TerraformApply
+  jobs:
+  - job: Apply
+    steps:
+    - script: |
+        terraform apply -auto-approve
+      workingDirectory: terraform
+      displayName: 'Apply Terraform Configuration'

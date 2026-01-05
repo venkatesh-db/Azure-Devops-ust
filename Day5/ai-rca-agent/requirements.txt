@@ -1,0 +1,7 @@
+# Python dependencies
+flask
+joblib
+scikit-learn
+pandas
+numpy
+loguru

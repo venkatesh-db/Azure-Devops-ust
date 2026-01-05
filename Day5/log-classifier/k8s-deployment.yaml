@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: log-classifier
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: log-classifier
+  template:
+    metadata:
+      labels:
+        app: log-classifier
+    spec:
+      containers:
+      - name: log-classifier
+        image: log-classifier:latest
+        ports:
+        - containerPort: 5000
+        env:
+        - name: NAME
+          value: "LogClassifier"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: log-classifier-service
+spec:
+  selector:
+    app: log-classifier
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 5000
+  type: LoadBalancer
