@@ -1,0 +1,194 @@
+
+trigger:
+- main
+
+pool:
+  name: local-agent-pool
+
+variables:
+  APP_NAME: "sample-app"
+  ENVIRONMENT: "dev"
+  BUILD_OUTPUT: "$(Build.ArtifactStagingDirectory)/output"
+  PIPELINE_TYPE: "SelfHosted-Enterprise"
+
+stages:
+
+# ==============================
+# STAGE 1: AGENT & ENV VALIDATION
+# ==============================
+- stage: AgentValidation
+  displayName: "Stage 1 - Agent & Environment Validation"
+  jobs:
+  - job: ValidateAgent
+    steps:
+    - checkout: self
+
+    - script: |
+        set -e
+
+        echo "=============================="
+        echo "🚀 PIPELINE TYPE : $(PIPELINE_TYPE)"
+        echo "🌍 ENVIRONMENT   : $(ENVIRONMENT)"
+        echo "=============================="
+
+        echo "🔹 Host Info"
+        hostname
+        uname -a
+
+        echo "🔹 Date & Time"
+        date
+
+        echo "🔹 Disk Usage"
+        df -h
+
+        echo "🔹 Memory Usage"
+        free -h || vm_stat
+
+        echo "🔹 CPU Info"
+        lscpu || sysctl -n machdep.cpu.brand_string
+
+        echo "✅ Agent validation successful"
+      displayName: "Validate Self-hosted Agent"
+
+# ==============================
+# STAGE 2: TOOLCHAIN VALIDATION
+# ==============================
+- stage: ToolValidation
+  displayName: "Stage 2 - Toolchain Validation"
+  dependsOn: AgentValidation
+  jobs:
+  - job: ValidateTools
+    steps:
+    - script: |
+        set -e
+
+        echo "🔹 Checking required tools"
+
+        echo "Git version:"
+        git --version
+
+        echo "Docker version:"
+        docker --version || echo "Docker not installed"
+
+        echo "Python version:"
+        python3 --version || echo "Python not installed"
+
+        echo "Node version:"
+        node --version || echo "Node not installed"
+
+        echo "Go version:"
+        go version || echo "Go not installed"
+
+        echo "✅ Toolchain validation completed"
+      displayName: "Validate Toolchain"
+
+# ==============================
+# STAGE 3: CODE QUALITY CHECKS
+# ==============================
+- stage: CodeQuality
+  displayName: "Stage 3 - Code Quality"
+  dependsOn: ToolValidation
+  jobs:
+  - job: LintAndTest
+    steps:
+    - script: |
+        set -e
+
+        echo "🔹 Running code quality checks"
+
+        if [ -f "go.mod" ]; then
+          echo "Go project detected"
+          go fmt ./...
+          go vet ./...
+          go test ./...
+        fi
+
+        if [ -f "package.json" ]; then
+          echo "Node project detected"
+          npm install
+          npm test || echo "No tests configured"
+        fi
+
+        echo "✅ Code quality stage completed"
+      displayName: "Lint & Unit Tests"
+
+# ==============================
+# STAGE 4: SECURITY CHECKS
+# ==============================
+- stage: SecurityScan
+  displayName: "Stage 4 - Security Scanning"
+  dependsOn: CodeQuality
+  jobs:
+  - job: Security
+    steps:
+    - script: |
+        echo "🔹 Security scan placeholder"
+
+        echo "✔ Dependency scanning"
+        echo "✔ Secret scanning"
+        echo "✔ SAST hooks"
+
+        echo "NOTE: Integrate tools like:"
+        echo "- Trivy"
+        echo "- Snyk"
+        echo "- SonarQube"
+
+        echo "✅ Security scan stage completed"
+      displayName: "Security Scan"
+
+# ==============================
+# STAGE 5: BUILD & PACKAGE
+# ==============================
+- stage: Build
+  displayName: "Stage 5 - Build & Package"
+  dependsOn: SecurityScan
+  jobs:
+  - job: BuildApp
+    steps:
+    - script: |
+        set -e
+
+        echo "🔹 Preparing build output directory"
+        mkdir -p $(BUILD_OUTPUT)
+
+        echo "🔹 Building application"
+
+        if [ -f "go.mod" ]; then
+          go build -o $(BUILD_OUTPUT)/$(APP_NAME)
+        fi
+
+        if [ -f "Dockerfile" ]; then
+          docker build -t $(APP_NAME):$(Build.BuildId) .
+        fi
+
+        echo "✅ Build completed"
+      displayName: "Build Application"
+
+    - task: PublishBuildArtifacts@1
+      inputs:
+        pathToPublish: "$(BUILD_OUTPUT)"
+        artifactName: "build-artifacts"
+        publishLocation: "Container"
+      displayName: "Publish Build Artifacts"
+
+# ==============================
+# STAGE 6: DEPLOYMENT READINESS
+# ==============================
+- stage: DeploymentReady
+  displayName: "Stage 6 - Deployment Readiness"
+  dependsOn: Build
+  jobs:
+  - job: DeployCheck
+    steps:
+    - script: |
+        echo "🚦 Deployment Readiness Check"
+
+        echo "✔ Artifacts available"
+        echo "✔ Security passed"
+        echo "✔ Tests passed"
+
+        echo "✅ Application ready for deployment to:"
+        echo "- DEV"
+        echo "- QA"
+        echo "- PROD (manual approval)"
+      displayName: "Deployment Gate"

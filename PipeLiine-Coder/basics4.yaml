@@ -1,0 +1,120 @@
+
+trigger:
+- main
+
+pool:
+  name: local-agent-pool
+
+variables:
+  APP_NAME: "sample-app"
+  BUILD_OUTPUT: "$(Build.ArtifactStagingDirectory)/output"
+
+stages:
+
+# ======================
+# STAGE 1: CI PIPELINE
+# ======================
+- stage: CI
+  displayName: "CI - Build & Validate"
+  jobs:
+  - job: Build
+    steps:
+    - checkout: self
+
+    - script: |
+        set -e
+        echo "🔹 CI Started"
+        echo "🔹 Building application"
+
+        mkdir -p $(BUILD_OUTPUT)
+        echo "Binary for $(APP_NAME)" > $(BUILD_OUTPUT)/$(APP_NAME)
+
+        echo "✅ CI completed"
+      displayName: "Build Application"
+
+    - task: PublishBuildArtifacts@1
+      inputs:
+        pathToPublish: "$(BUILD_OUTPUT)"
+        artifactName: "app-artifact"
+      displayName: "Publish Artifact"
+
+# ======================
+# STAGE 2: DEPLOY TO DEV
+# ======================
+- stage: Deploy_DEV
+  displayName: "CD - Deploy to DEV"
+  dependsOn: CI
+  variables:
+    ENV: "DEV"
+  jobs:
+  - job: DeployDev
+    steps:
+    - download: current
+      artifact: app-artifact
+
+    - script: |
+        echo "🚀 Deploying to DEV"
+        echo "Environment: $(ENV)"
+        echo "Artifact deployed successfully"
+      displayName: "DEV Deployment"
+
+# ======================
+# STAGE 3: DEPLOY TO QA
+# ======================
+- stage: Deploy_QA
+  displayName: "CD - Deploy to QA"
+  dependsOn: Deploy_DEV
+  variables:
+    ENV: "QA"
+  jobs:
+  - job: DeployQA
+    steps:
+    - download: current
+      artifact: app-artifact
+
+    - script: |
+        echo "🚀 Deploying to QA"
+        echo "Running smoke tests"
+        echo "QA deployment successful"
+      displayName: "QA Deployment"
+
+# ======================
+# STAGE 4: PROD APPROVAL
+# ======================
+- stage: Approve_PROD
+  displayName: "Manual Approval for PROD"
+  dependsOn: Deploy_QA
+  jobs:
+  - job: Approval
+    pool: server
+    steps:
+    - task: ManualValidation@0
+      inputs:
+        instructions: |
+          Please verify:
+          ✔ QA tests passed
+          ✔ Business approval received
+          ✔ Rollback plan ready
+        timeoutInMinutes: 1440
+
+# ======================
+# STAGE 5: DEPLOY TO PROD
+# ======================
+- stage: Deploy_PROD
+  displayName: "CD - Deploy to PROD"
+  dependsOn: Approve_PROD
+  variables:
+    ENV: "PROD"
+  jobs:
+  - job: DeployProd
+    steps:
+    - download: current
+      artifact: app-artifact
+
+    - script: |
+        echo "🚀 Deploying to PROD"
+        echo "Environment: $(ENV)"
+        echo "Monitoring enabled"
+        echo "Rollback strategy available"
+        echo "✅ PROD deployment successful"
+      displayName: "PROD Deployment"

@@ -1,0 +1,136 @@
+
+trigger:
+  branches:
+    include:
+      - main
+      - release/*
+
+pr:
+  branches:
+    include:
+      - main
+
+variables:
+  APP_NAME: "deep-dive-app"
+  ENVIRONMENT: "dev"
+  ERROR_THRESHOLD: 5
+
+stages:
+
+# =====================================================
+# STAGE 1: AGENT & ENV VALIDATION
+# =====================================================
+- stage: AgentValidation
+  displayName: "Agent & Environment Validation"
+  jobs:
+  - job: ValidateAgent
+    pool:
+      name: local-agent-pool
+    steps:
+    - script: |
+        echo "Agent Name: $(Agent.Name)"
+        echo "Machine    : $(Agent.MachineName)"
+        echo "OS         : $(Agent.OS)"
+        df -h
+      displayName: "Validate Self-hosted Agent"
+
+# =====================================================
+# STAGE 2: BUILD (POWERSHELL + PYTHON)
+# =====================================================
+- stage: Build
+  displayName: "Hybrid Build Stage"
+  dependsOn: AgentValidation
+  jobs:
+  - job: BuildApp
+    pool:
+      name: local-agent-pool
+    steps:
+
+    - powershell: |
+        Write-Host "🔧 PowerShell Build Step"
+        New-Item -ItemType Directory -Force -Path output
+        "Build $(Build.BuildId)" | Out-File output/app.txt
+      displayName: "PowerShell Build"
+
+    - script: |
+        echo "🐍 Python Validation"
+        python3 --version || python --version
+
+        python3 <<EOF
+        with open("output/app.txt") as f:
+            print("Artifact content:", f.read())
+        EOF
+      displayName: "Python Validation"
+
+# =====================================================
+# STAGE 3: DEPLOY TO ENVIRONMENT
+# =====================================================
+- stage: Deploy
+  displayName: "Deploy to DEV Environment"
+  dependsOn: Build
+  jobs:
+  - deployment: DeployApp
+    environment: dev-env
+    pool:
+      name: local-agent-pool
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - script: |
+              echo "🚀 Deploying $(APP_NAME) to DEV"
+            displayName: "Deploy Application"
+
+# =====================================================
+# STAGE 4: MONITORING + AI LOG SUMMARIZER
+# =====================================================
+- stage: Monitor
+  displayName: "Monitoring & AI Log Analysis"
+  dependsOn: Deploy
+  jobs:
+  - job: MonitorJob
+    pool:
+      name: local-agent-pool
+    steps:
+
+    - script: |
+        echo "📊 Monitoring Application"
+        python3 --version || python --version
+
+        python3 <<EOF
+        import random
+
+        error_rate = random.randint(0, 10)
+        print(f"Error Rate: {error_rate}%")
+
+        logs = [
+            "INFO: Service started",
+            "WARN: High latency",
+            "ERROR: Timeout detected" if error_rate > 5 else "INFO: Healthy"
+        ]
+
+        print("\n--- AI LOG SUMMARY ---")
+        for log in logs:
+            print("-", log)
+
+        if error_rate > 5:
+            raise SystemExit("❌ Error threshold breached")
+        EOF
+      displayName: "AI Log Summarizer"
+
+# =====================================================
+# STAGE 5: CONDITIONAL ROLLBACK
+# =====================================================
+- stage: Rollback
+  displayName: "Rollback on Failure"
+  dependsOn: Monitor
+  condition: failed()
+  jobs:
+  - job: RollbackJob
+    pool:
+      name: local-agent-pool
+    steps:
+    - powershell: |
+        Write-Host "❌ Monitoring failed"
+        Write-Host "🔙 Rolling back $(APP_NAME)"
+      displayName: "Rollback Execution"

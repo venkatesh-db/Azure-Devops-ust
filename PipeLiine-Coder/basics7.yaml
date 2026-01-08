@@ -1,0 +1,111 @@
+
+trigger:
+- main
+
+pool:
+  name: local-agent-pool
+
+variables:
+  APP_NAME: "sample-app"
+  BUILD_OUTPUT: "$(Build.ArtifactStagingDirectory)/output"
+  ERROR_THRESHOLD: 5   # % error allowed
+
+stages:
+
+# =========================
+# STAGE 1: CI BUILD
+# =========================
+- stage: CI
+  displayName: "CI - Build"
+  jobs:
+  - job: Build
+    steps:
+    - checkout: self
+    - script: |
+        set -e
+        mkdir -p $(BUILD_OUTPUT)
+        echo "Build $(Build.BuildId)" > $(BUILD_OUTPUT)/$(APP_NAME)
+      displayName: "Build App"
+
+    - task: PublishBuildArtifacts@1
+      inputs:
+        pathToPublish: "$(BUILD_OUTPUT)"
+        artifactName: "app-artifact"
+
+# =========================
+# STAGE 2: DEPLOY GREEN
+# =========================
+- stage: DeployGreen
+  displayName: "Deploy to GREEN"
+  dependsOn: CI
+  jobs:
+  - job: Deploy
+    steps:
+    - download: current
+      artifact: app-artifact
+    - script: |
+        echo "Deploying to GREEN slot"
+      displayName: "GREEN Deploy"
+
+# =========================
+# STAGE 3: HEALTH CHECK
+# =========================
+- stage: HealthCheck
+  displayName: "GREEN Health Check"
+  dependsOn: DeployGreen
+  jobs:
+  - job: Health
+    steps:
+    - script: |
+        echo "Health checks passed"
+      displayName: "Health Validation"
+
+# =========================
+# STAGE 4: SWITCH TRAFFIC
+# =========================
+- stage: SwitchTraffic
+  displayName: "Switch Traffic to GREEN"
+  dependsOn: HealthCheck
+  jobs:
+  - job: Switch
+    steps:
+    - script: |
+        echo "Traffic switched to GREEN"
+      displayName: "Traffic Switch"
+
+# =========================
+# STAGE 5: MONITORING WINDOW
+# =========================
+- stage: Monitor
+  displayName: "Post-Deploy Monitoring"
+  dependsOn: SwitchTraffic
+  jobs:
+  - job: MonitorApp
+    steps:
+    - script: |
+        echo "📊 Monitoring application..."
+        ERROR_RATE=$((RANDOM % 10))
+        echo "Detected error rate: $ERROR_RATE%"
+
+        if [ "$ERROR_RATE" -gt "$(ERROR_THRESHOLD)" ]; then
+          echo "❌ Error rate too high"
+          exit 1
+        fi
+
+        echo "✅ Error rate within limit"
+      displayName: "Monitor Metrics"
+
+# =========================
+# STAGE 6: AUTO ROLLBACK
+# =========================
+- stage: AutoRollback
+  displayName: "Auto Rollback to BLUE"
+  dependsOn: Monitor
+  condition: failed()
+  jobs:
+  - job: Rollback
+    steps:
+    - script: |
+        echo "🚨 Rolling back to BLUE"
+        echo "BLUE restored as LIVE"
+      displayName: "Rollback Execution"

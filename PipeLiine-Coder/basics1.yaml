@@ -1,0 +1,13 @@
+trigger:
+- main
+
+pool:
+  name: local-agent-pool
+
+steps:
+- script: |
+    echo "Hello from self-hosted agent"
+    uname -a
+    date
+  displayName: "Self-hosted CI test"
+

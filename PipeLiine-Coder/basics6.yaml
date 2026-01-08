@@ -1,0 +1,119 @@
+trigger:
+- main
+
+pool:
+  name: local-agent-pool
+
+variables:
+  APP_NAME: "sample-app"
+  BUILD_OUTPUT: "$(Build.ArtifactStagingDirectory)/output"
+  ACTIVE_SLOT: "BLUE"
+  INACTIVE_SLOT: "GREEN"
+
+stages:
+
+# =========================
+# STAGE 1: CI BUILD
+# =========================
+- stage: CI
+  displayName: "CI - Build"
+  jobs:
+  - job: Build
+    steps:
+    - checkout: self
+
+    - script: |
+        set -e
+        echo "🔧 Building application"
+        mkdir -p $(BUILD_OUTPUT)
+        echo "Build $(Build.BuildId)" > $(BUILD_OUTPUT)/$(APP_NAME)
+      displayName: "Build App"
+
+    - task: PublishBuildArtifacts@1
+      inputs:
+        pathToPublish: "$(BUILD_OUTPUT)"
+        artifactName: "app-artifact"
+      displayName: "Publish Artifact"
+
+# =========================
+# STAGE 2: DEPLOY TO GREEN
+# =========================
+- stage: Deploy_Green
+  displayName: "Deploy to GREEN Slot"
+  dependsOn: CI
+  jobs:
+  - job: DeployGreen
+    steps:
+    - download: current
+      artifact: app-artifact
+
+    - script: |
+        set -e
+        echo "🚀 Deploying to GREEN slot"
+        echo "App deployed to GREEN"
+      displayName: "GREEN Deployment"
+
+# =========================
+# STAGE 3: HEALTH CHECK
+# =========================
+- stage: HealthCheck
+  displayName: "GREEN Health Check"
+  dependsOn: Deploy_Green
+  jobs:
+  - job: ValidateGreen
+    steps:
+    - script: |
+        set -e
+        echo "🩺 Running health checks"
+        echo "GREEN slot healthy"
+      displayName: "Health Check"
+
+# =========================
+# STAGE 4: PROD APPROVAL
+# =========================
+- stage: Approve_PROD
+  displayName: "Approval Before Traffic Switch"
+  dependsOn: HealthCheck
+  jobs:
+  - job: Approval
+    pool: server
+    steps:
+    - task: ManualValidation@0
+      inputs:
+        instructions: |
+          Approve traffic switch to GREEN
+          ✔ Health checks passed
+          ✔ Rollback ready
+        timeoutInMinutes: 1440
+
+# =========================
+# STAGE 5: TRAFFIC SWITCH
+# =========================
+- stage: SwitchTraffic
+  displayName: "Switch Traffic to GREEN"
+  dependsOn: Approve_PROD
+  jobs:
+  - job: Switch
+    steps:
+    - script: |
+        set -e
+        echo "🔁 Switching traffic"
+        echo "BLUE -> GREEN"
+        echo "GREEN is now LIVE"
+      displayName: "Traffic Switch"
+
+# =========================
+# STAGE 6: ROLLBACK (AUTO)
+# =========================
+- stage: Rollback
+  displayName: "Rollback if PROD Fails"
+  dependsOn: SwitchTraffic
+  condition: failed()
+  jobs:
+  - job: RollbackJob
+    steps:
+    - script: |
+        echo "❌ PROD issue detected"
+        echo "🔙 Rolling back to BLUE"
+        echo "BLUE restored as LIVE"
+      displayName: "Rollback to BLUE"

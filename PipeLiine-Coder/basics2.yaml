@@ -1,0 +1,42 @@
+
+trigger:
+- main
+
+pool:
+  name: local-agent-pool
+
+variables:
+  PIPELINE_STAGE: "CI"
+  AGENT_CHECK: "SelfHosted"
+
+steps:
+- checkout: self
+
+- script: |
+    set -e
+
+    echo "=============================="
+    echo "🚀 Pipeline Stage : $PIPELINE_STAGE"
+    echo "🤖 Agent Type     : $AGENT_CHECK"
+    echo "=============================="
+
+    echo "🔹 Agent Details"
+    echo "Hostname  : $(hostname)"
+    echo "OS Info   :"
+    uname -a
+
+    echo ""
+    echo "🔹 Date & Time"
+    date
+
+    echo ""
+    echo "🔹 Disk Usage"
+    df -h
+
+    echo ""
+    echo "🔹 Memory Usage"
+    free -h || vm_stat
+
+    echo ""
+    echo "✅ Self-hosted agent is healthy and ready!"
+  displayName: "Validate Self-hosted Agent Environment"
