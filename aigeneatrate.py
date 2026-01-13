@@ -17,6 +17,7 @@ flow of code
 
 # Replace with your OpenAI API key
 
+
 """
 Azure DSC – Desired State Configuration Generator using OpenAI (NEW API)
 """
