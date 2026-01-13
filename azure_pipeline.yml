@@ -1,0 +1,101 @@
+trigger:
+- main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  environment: 'dev'
+  resourceGroupName: 'myResourceGroup-${{ variables.environment }}'
+  location: 'eastus'
+  templateFile: 'azuredeploy.json'
+  deploymentName: 'armDeployment-${{ variables.environment }}'
+
+stages:
+- stage: Deploy
+  displayName: Deploy Azure Infrastructure
+  jobs:
+  - job: DeployARMTemplate
+    displayName: Deploy ARM Template
+    steps:
+
+    # Step 1: Validate ARM template
+    - task: AzureCLI@2
+      displayName: Validate ARM Template
+      inputs:
+        azureSubscription: 'YourAzureSubscription'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          az deployment group validate \
+            --resource-group ${{ variables.resourceGroupName }} \
+            --template-file ${{ variables.templateFile }} \
+            --parameters @parameters.${{ variables.environment }}.json
+      failOnStderr: true
+
+    # Step 2: Create or update resource group
+    - task: AzureCLI@2
+      displayName: Create or Update Resource Group
+      inputs:
+        azureSubscription: 'YourAzureSubscription'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          az group create \
+            --name ${{ variables.resourceGroupName }} \
+            --location ${{ variables.location }}
+
+    # Step 3: Deploy ARM template
+    - task: AzureCLI@2
+      displayName: Deploy ARM Template
+      inputs:
+        azureSubscription: 'YourAzureSubscription'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          az deployment group create \
+            --resource-group ${{ variables.resourceGroupName }} \
+            --template-file ${{ variables.templateFile }} \
+            --parameters @parameters.${{ variables.environment }}.json \
+            --mode Incremental
+
+    # Step 4: Verify deployment success
+    - task: AzureCLI@2
+      displayName: Verify Deployment Success
+      inputs:
+        azureSubscription: 'YourAzureSubscription'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          deploymentState=$(az deployment group show \
+            --resource-group ${{ variables.resourceGroupName }} \
+            --name ${{ variables.deploymentName }} \
+            --query "properties.provisioningState" -o tsv)
+          if [ "$deploymentState" != "Succeeded" ]; then
+            echo "Deployment failed with state: $deploymentState"
+            exit 1
+          fi
+
+    # Step 5: Output resource details
+    - task: AzureCLI@2
+      displayName: Output Resource Details
+      inputs:
+        azureSubscription: 'YourAzureSubscription'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          az resource list \
+            --resource-group ${{ variables.resourceGroupName }} \
+            -o table
+
+    # Step 6: Provide rollback steps if deployment fails
+    - task: AzureCLI@2
+      displayName: Rollback Steps (if needed)
+      condition: failed()
+      inputs:
+        azureSubscription: 'YourAzureSubscription'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          echo "To rollback, manually delete the resource group:"
+          echo "az group delete --name ${{ variables.resourceGroupName }} --yes --no-wait"

@@ -1,28 +1,3 @@
-
-'''
-# azure dsc  desired state configuration for ai gen
-
-'''
-
-
-'''
-flow of code 
-
-1. create prompt powershell desired state dsc 
-2. openai model -> pass prompt to openai
-3. response openai 
-4. response from  openai  we write in to as ur wish filename ps1 
-
-'''
-
-# Replace with your OpenAI API key
-
-
-
-"""
-Azure DSC – Desired State Configuration Generator using OpenAI (NEW API)
-"""
-
 from openai import OpenAI
 import json
 
@@ -42,25 +17,32 @@ def generate_dsc_template(prompt: str) -> str:
 
     return response.output_text.strip()
 
+def save_dsc_to_file(dsc_template: str, filename: str = "dsc_template.ps1") -> None:
+    """
+    Save the generated DSC template to a file
+    """
+    with open(filename, "w", encoding="utf-8") as file:
+        file.write(dsc_template)
+    print(f"\nDSC template saved as {filename}")
 
 def main():
-    
+    """
+    Main function to generate and save DSC template
+    """
     prompt = (
         "Generate a PowerShell Desired State Configuration (DSC) template for deploying a web server. "
         "Include IIS installation, firewall rules, and deployment of a sample website."
     )
 
+    print("===== Generating DSC Template =====")
     dsc_template = generate_dsc_template(prompt)
 
     print("===== Generated DSC Template =====\n")
     print(dsc_template)
 
-    # Save DSC to file
-    with open("dsc_template.ps1", "w", encoding="utf-8") as file:
-        file.write(dsc_template)
-
-    print("\nDSC template saved as dsc_template.ps1")
-
+    save_dsc_to_file(dsc_template)
 
 if __name__ == "__main__":
     main()
+    
+    
