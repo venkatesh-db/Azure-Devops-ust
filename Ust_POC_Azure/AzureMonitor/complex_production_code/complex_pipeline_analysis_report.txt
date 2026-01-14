@@ -1,0 +1,4 @@
+Root Cause Analysis Report:
+===========================
+2026-01-14 10:00:19: Test Case 3: Failed - NullPointerException in ModuleX
+2026-01-14 10:03:02: Integration Test 3: Failed - Timeout while connecting to ServiceY

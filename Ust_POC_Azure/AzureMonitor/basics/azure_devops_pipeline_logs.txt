@@ -1,0 +1,35 @@
+# Azure DevOps Pipeline Logs
+
+This file contains simulated logs from an Azure DevOps pipeline. These logs are for demonstration purposes and mimic the structure and content of real pipeline logs.
+
+## Example Log Output
+
+### Build Stage
+```
+2026-01-14T10:00:00.000Z: Starting build pipeline...
+2026-01-14T10:00:01.000Z: Restoring dependencies...
+2026-01-14T10:00:05.000Z: Dependencies restored successfully.
+2026-01-14T10:00:06.000Z: Compiling source code...
+2026-01-14T10:00:15.000Z: Compilation completed successfully.
+2026-01-14T10:00:16.000Z: Running unit tests...
+2026-01-14T10:00:30.000Z: All unit tests passed.
+2026-01-14T10:00:31.000Z: Build stage completed successfully.
+```
+
+### Release Stage
+```
+2026-01-14T10:01:00.000Z: Starting release pipeline...
+2026-01-14T10:01:01.000Z: Deploying to staging environment...
+2026-01-14T10:01:30.000Z: Deployment to staging completed successfully.
+2026-01-14T10:01:31.000Z: Running integration tests...
+2026-01-14T10:02:00.000Z: Integration tests passed.
+2026-01-14T10:02:01.000Z: Deploying to production environment...
+2026-01-14T10:02:30.000Z: Deployment to production completed successfully.
+2026-01-14T10:02:31.000Z: Release stage completed successfully.
+```
+
+### Summary
+```
+2026-01-14T10:03:00.000Z: Pipeline execution completed successfully.
+2026-01-14T10:03:01.000Z: Total duration: 3 minutes 1 second.
+```

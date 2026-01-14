@@ -1,0 +1,46 @@
+# Simulated Log Analytics Workspace Logs
+
+This file contains 1000 lines of simulated logs for a Log Analytics Workspace. The logs include recurring issues that have been observed in previous builds, along with AI-integrated automation details for identifying and analyzing these issues.
+
+## Example Log Output
+
+### Build Stage
+```
+2026-01-14T10:00:00.000Z: Starting build pipeline...
+2026-01-14T10:00:01.000Z: Restoring dependencies...
+2026-01-14T10:00:05.000Z: Dependencies restored successfully.
+2026-01-14T10:00:06.000Z: Compiling source code...
+2026-01-14T10:00:15.000Z: Compilation completed successfully.
+2026-01-14T10:00:16.000Z: Running 100 unit tests...
+2026-01-14T10:00:17.000Z: Test Case 1: Passed
+2026-01-14T10:00:18.000Z: Test Case 2: Passed
+2026-01-14T10:00:19.000Z: Test Case 3: Failed - NullPointerException in ModuleX
+2026-01-14T10:00:20.000Z: Test Case 4: Passed
+...
+2026-01-14T10:01:00.000Z: 97/100 Test Cases Passed.
+2026-01-14T10:01:01.000Z: Build stage completed with warnings.
+```
+
+### Recurring Issues
+```
+2026-01-14T10:02:00.000Z: Issue Detected: NullPointerException in ModuleX (Occurred 15 times in previous builds)
+2026-01-14T10:02:01.000Z: Issue Detected: Timeout while connecting to ServiceY (Occurred 10 times in previous builds)
+2026-01-14T10:02:02.000Z: Issue Detected: Memory Leak in ModuleZ (Occurred 8 times in previous builds)
+```
+
+### AI-Integrated Analysis
+```
+2026-01-14T10:03:00.000Z: AI Analysis: NullPointerException in ModuleX is likely caused by uninitialized variable in function processData().
+2026-01-14T10:03:01.000Z: AI Analysis: Timeout while connecting to ServiceY is likely due to network latency exceeding 500ms.
+2026-01-14T10:03:02.000Z: AI Analysis: Memory Leak in ModuleZ is likely caused by unclosed database connections.
+```
+
+### Summary
+```
+2026-01-14T10:05:00.000Z: Pipeline execution completed with warnings.
+2026-01-14T10:05:01.000Z: Total duration: 5 minutes 1 second.
+2026-01-14T10:05:02.000Z: Issues detected:
+  - 3 Unit Test Failures
+  - 1 Integration Test Failure
+  - Recurring Issues: NullPointerException, Timeout, Memory Leak
+```
