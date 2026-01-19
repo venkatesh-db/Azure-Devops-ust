@@ -1,0 +1,4 @@
+# Dependencies for pipeline debugging and AI log summarization
+openai
+pandas
+numpy

@@ -1,0 +1,4 @@
+INFO: Pipeline started successfully.
+ERROR: Step 3 failed due to timeout.
+INFO: Retrying step 3.
+INFO: Pipeline completed successfully.
