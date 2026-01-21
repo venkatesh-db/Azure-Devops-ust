@@ -1,0 +1,19 @@
+
+pool:
+  name: local-agent-pool
+  
+stage: Build 
+jobs:
+ - job: Unittests
+   pool: windows-latest
+
+ - job: CodeAnalysis
+   variables:
+      buildConfiguration: 'Release'
+   pool: ubuntu-latest
+
+ - job: securityscan 
+   pool: ubuntu-latest
+
+ - job: ArtifactCreation
+   pool: ubuntu-latest

@@ -1,0 +1,136 @@
+
+trigger:
+- main
+
+pool:
+  name: local-agent-pool
+
+variables:
+  APP_NAME: "sample-app"
+  ACTIVE_SLOT_FILE: "/tmp/active_slot.txt"
+  BUILD_OUTPUT: "$(Build.ArtifactStagingDirectory)/output"
+
+################################
+# STAGE 1: CI BUILD
+################################
+stages:
+- stage: CI
+  displayName: "CI - Build Immutable Artifact"
+  jobs:
+  - job: Build
+    steps:
+    - checkout: self
+
+    - script: |
+        set -e
+        mkdir -p $(BUILD_OUTPUT)
+        echo "Binary version $(Build.BuildId)" > $(BUILD_OUTPUT)/$(APP_NAME)
+      displayName: "Build App"
+
+    - task: PublishBuildArtifacts@1
+      inputs:
+        pathToPublish: "$(BUILD_OUTPUT)"
+        artifactName: "app"
+      displayName: "Publish Artifact"
+
+################################
+# STAGE 2: DEPLOY GREEN
+################################
+- stage: Deploy_GREEN
+  displayName: "Deploy GREEN (Idle)"
+  dependsOn: CI
+  jobs:
+  - job: DeployGreen
+    steps:
+    - download: current
+      artifact: app
+
+    - script: |
+        echo "GREEN" > $(ACTIVE_SLOT_FILE).new
+        echo "🚀 Deploying GREEN slot"
+        sleep 3
+        echo "GREEN deployment completed"
+      displayName: "Deploy GREEN Slot"
+
+################################
+# STAGE 3: HEALTH CHECK
+################################
+- stage: HealthCheck
+  displayName: "Health Check GREEN"
+  dependsOn: Deploy_GREEN
+  jobs:
+  - job: Health
+    steps:
+    - script: |
+        echo "🔍 Running health checks on GREEN"
+        sleep 2
+        echo "HTTP 200 OK"
+      displayName: "GREEN Health Check"
+
+################################
+# STAGE 4: SWITCH TRAFFIC
+################################
+- stage: SwitchTraffic
+  displayName: "Switch Traffic to GREEN"
+  dependsOn: HealthCheck
+  jobs:
+  - job: Switch
+    steps:
+    - script: |
+        echo "GREEN" > $(ACTIVE_SLOT_FILE)
+        echo "🚦 Traffic switched to GREEN"
+      displayName: "Traffic Switch"
+
+################################
+# STAGE 5: MONITOR & ROLLBACK
+################################
+- stage: Monitor
+  displayName: "Monitor Production"
+  dependsOn: SwitchTraffic
+  jobs:
+  - job: MonitorApp
+    steps:
+    - script: |
+        echo "📊 Monitoring application"
+        sleep 3
+
+        FAILURE=false  # change to true to simulate failure
+
+        if [ "$FAILURE" = true ]; then
+          echo "❌ Failure detected"
+          exit 1
+        fi
+
+        echo "✅ System stable"
+      displayName: "Monitor App"
+
+################################
+# STAGE 6: AUTO ROLLBACK
+################################
+- stage: Rollback
+  displayName: "Rollback if Failure"
+  dependsOn: Monitor
+  condition: failed()
+  jobs:
+  - job: RollbackJob
+    steps:
+    - script: |
+        echo "🔁 Rolling back to BLUE"
+        echo "BLUE" > $(ACTIVE_SLOT_FILE)
+        echo "Rollback completed"
+      displayName: "Rollback to BLUE"
+
+################################
+# STAGE 7: FINALIZE
+################################
+- stage: Finalize
+  displayName: "Finalize Deployment"
+  dependsOn: Monitor
+  condition: succeeded()
+  jobs:
+  - job: Finalize
+    steps:
+    - script: |
+        echo "🏁 Deployment finalized"
+        echo "GREEN is now ACTIVE"
+      displayName: "Finalize Release"
