@@ -1,0 +1,7 @@
+{
+  "deployments": [
+    {"id": "deployment_1", "status": "success", "timestamp": "2026-01-21T09:00:00Z"},
+    {"id": "deployment_2", "status": "failure", "timestamp": "2026-01-21T10:00:00Z"},
+    {"id": "deployment_3", "status": "success", "timestamp": "2026-01-21T11:00:00Z"}
+  ]
+}

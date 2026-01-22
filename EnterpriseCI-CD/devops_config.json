@@ -1,0 +1,7 @@
+{
+  "tasks": [
+    {"name": "Build", "status": "completed"},
+    {"name": "Test", "status": "completed"},
+    {"name": "Deploy", "status": "pending"}
+  ]
+}

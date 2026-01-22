@@ -1,0 +1,49 @@
+trigger:
+- main
+
+pool:
+  name: local-agent-pool
+
+stages:
+- stage: AI_Automation_RCA
+  displayName: AI-Powered Automation and Root Cause Analysis
+  jobs:
+  - job: RootCauseDetection
+    displayName: Root Cause Detection on Failed Pipeline Runs
+    steps:
+    - script: |
+        echo "Running AI-based root cause detection..."
+        python3 "ai_root_cause_detection.py" --logs "pipeline_logs.json"
+      displayName: Detect Root Cause
+
+  - job: PipelineDebugging
+    displayName: Pipeline Debugging with AI Log Summarizers
+    steps:
+    - script: |
+        echo "Debugging pipeline using AI log summarizers..."
+        python3 "ai_log_summarizer.py" --logs "pipeline_logs.json"
+      displayName: Debug Pipeline Logs
+
+  - job: RCA_Automation
+    displayName: RCA Automation with AI Summarizers
+    steps:
+    - script: |
+        echo "Automating Root Cause Analysis using AI summarizers..."
+        python3 "ai_rca_automation.py" --logs "pipeline_logs.json"
+      displayName: Automate RCA
+
+  - job: PredictDeploymentFailures
+    displayName: Predict Deployment Failures with ML Models
+    steps:
+    - script: |
+        echo "Predicting deployment failures using Machine Learning models..."
+        python3 "ml_deployment_failure_predictor.py" --data "deployment_data.json"
+      displayName: Predict Deployment Failures
+
+  - job: MLForDevOps
+    displayName: Machine Learning for DevOps
+    steps:
+    - script: |
+        echo "Applying Machine Learning for DevOps tasks..."
+        python3 "ml_devops_optimization.py" --config "devops_config.json"
+      displayName: Apply ML for DevOps

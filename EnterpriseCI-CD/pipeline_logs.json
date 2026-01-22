@@ -1,0 +1,13 @@
+{
+  "logs": [
+    {"timestamp": "2026-01-21T10:00:00Z", "message": "Pipeline started successfully."},
+    {"timestamp": "2026-01-21T10:05:00Z", "message": "Error: Connection timeout while accessing database."},
+    {"timestamp": "2026-01-21T10:10:00Z", "message": "Pipeline failed due to timeout."}
+  ],
+  "errors": [
+    {"timestamp": "2026-01-21T10:05:00Z", "message": "Connection timeout while accessing database."}
+  ],
+  "warnings": [
+    {"timestamp": "2026-01-21T10:03:00Z", "message": "Database response time is high."}
+  ]
+}
