@@ -1,0 +1,107 @@
+
+trigger:
+- main
+
+pool:
+  name: local-agent-pool
+
+variables:
+  env: dev
+  location: eastus
+  subscriptionId: ab9b448f-07ad-4039-b26d-e74b90b60272
+  acrName: myacrname
+  imageName: backend-api
+  terraformVersion: 1.6.3
+
+steps:
+
+# ==================================================
+# 1️⃣ AZURE LOGIN (SERVICE CONNECTION)
+# ==================================================
+- task: AzureCLI@2
+  displayName: Azure Login
+  inputs:
+    azureSubscription: independenceday
+    scriptType: bash
+    scriptLocation: inlineScript
+    inlineScript: |
+      echo "Azure login successful"
+      az account show
+
+# ==================================================
+# 2️⃣ INSTALL TERRAFORM
+# ==================================================
+- script: |
+    echo "Installing Terraform"
+
+    curl -LO https://releases.hashicorp.com/terraform/$(terraformVersion)/terraform_$(terraformVersion)_linux_amd64.zip
+    unzip terraform_$(terraformVersion)_linux_amd64.zip
+    sudo mv terraform /usr/local/bin/
+    terraform version
+  displayName: Install Terraform
+
+# ==================================================
+# 3️⃣ TERRAFORM INIT & APPLY
+# ==================================================
+- task: AzureCLI@2
+  displayName: Terraform Init & Apply
+  inputs:
+    azureSubscription: independenceday
+    scriptType: bash
+    scriptLocation: inlineScript
+    inlineScript: |
+      echo "Setting subscription"
+      az account set --subscription $(subscriptionId)
+      az account show
+
+      echo "Creating Resource Group"
+      az group create \
+        --name rg-$(env) \
+        --location $(location)
+
+      echo "Running Terraform"
+      terraform init
+      terraform apply -auto-approve
+
+# ==================================================
+# 4️⃣ LOGIN TO ACR (USING ARM CONNECTION)
+# ==================================================
+- task: AzureCLI@2
+  displayName: Login to ACR
+  inputs:
+    azureSubscription: independenceday
+    scriptType: bash
+    scriptLocation: inlineScript
+    inlineScript: |
+      az account set --subscription $(subscriptionId)
+      az acr login --name $(acrName)
+
+# ==================================================
+# 5️⃣ DOCKER BUILD & PUSH (NO DOCKER SERVICE CONNECTION)
+# ==================================================
+- script: |
+    docker build \
+      -t $(acrName).azurecr.io/$(imageName):latest .
+
+    docker push \
+      $(acrName).azurecr.io/$(imageName):latest
+  displayName: Docker Build & Push
+
+# ==================================================
+# 6️⃣ DEPLOY CONTAINER APP (OPTIONAL)
+# ==================================================
+- task: AzureCLI@2
+  displayName: Deploy Container App
+  inputs:
+    azureSubscription: independenceday
+    scriptType: bash
+    scriptLocation: inlineScript
+    inlineScript: |
+      az account set --subscription $(subscriptionId)
+
+      az containerapp update \
+        --name $(imageName) \
+        --resource-group rg-$(env) \
+        --image $(acrName).azurecr.io/$(imageName):latest
+
+      echo "Deployment completed"
