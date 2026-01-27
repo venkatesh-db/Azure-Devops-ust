@@ -1,6 +1,6 @@
 # Core Framework & Web
 Flask==2.3.0
-Flask-CORS==4.0.0
+Flask-CORS==6.0.0
 werkzeug==2.3.0
 
 # Azure Integration
