@@ -1,0 +1,35 @@
+
+# step1 
+
+0. Project folders 
+   src/
+   1. analytics --> machine learning 
+   2. app       --> backend 
+   3. log analysis --> rca ai automotion
+   4. metrics      --> system metrics + ai metrics 
+
+1. folder docker build docker 
+
+2. backend-> docker build -t banking-app -f datadriven/banking-monitoring/docker/Dockerfile.app datadriven/banking-monitoring
+
+3. docker run -p 5002:5050 -p 8001:8000 banking-app
+
+4.  python3 examples.py --> to automotion code 
+    to test the code which is running in docker 
+
+5. docker is simuated output 
+
+curl -X POST -H "Content-Type: application/json" -d '{"account_holder": "John Doe", "initial_balance": 1000}' http://localhost:5001/api/accounts
+curl http://localhost:5001/api/accounts/ACC-0068DECD3CB0/balance
+curl -X POST -H "Content-Type: application/json" -d '{"account_holder": "lord ganesha", "initial_balance": 3000}' http://localhost:5001/api/accounts
+
+6. metrics ->
+  curl http://localhost:5001/api/health
+
+7. Prometheus Metrics 
+   Python for Log Parsing, Trend Detection, and Anomaly Analysis
+   Root Cause Analysis (RCA) Automation using AI-based summarizers
+
+
+
+

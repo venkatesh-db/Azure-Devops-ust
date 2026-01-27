@@ -1,0 +1,116 @@
+groups:
+  - name: banking_alerts
+    interval: 30s
+    rules:
+      # High error rate
+      - alert: HighErrorRate
+        expr: |
+          (sum(rate(banking_transaction_errors_total[5m])) / 
+           sum(rate(banking_transactions_total[5m]))) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          category: application
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is {{ $value | humanizePercentage }} over last 5 minutes"
+
+      # Low transaction success rate
+      - alert: LowSuccessRate
+        expr: |
+          (sum(rate(banking_transactions_total{status="success"}[10m])) /
+           sum(rate(banking_transactions_total[10m]))) < 0.9
+        for: 10m
+        labels:
+          severity: critical
+          category: business
+        annotations:
+          summary: "Transaction success rate below 90%"
+          description: "Current success rate: {{ $value | humanizePercentage }}"
+
+      # High API latency
+      - alert: HighAPILatency
+        expr: |
+          histogram_quantile(0.95, rate(banking_api_request_duration_seconds_bucket[5m])) > 1.0
+        for: 5m
+        labels:
+          severity: warning
+          category: performance
+        annotations:
+          summary: "High API latency detected"
+          description: "P95 latency: {{ $value }}s"
+
+      # High fraud risk
+      - alert: HighFraudRisk
+        expr: banking_fraud_risk_score > 0.7
+        for: 1m
+        labels:
+          severity: critical
+          category: security
+        annotations:
+          summary: "High fraud risk score"
+          description: "Fraud risk score: {{ $value }}"
+
+      # Locked accounts threshold
+      - alert: ManyLockedAccounts
+        expr: increase(banking_account_lockouts_total[1h]) > 5
+        labels:
+          severity: warning
+          category: security
+        annotations:
+          summary: "Multiple accounts locked in last hour"
+          description: "{{ $value }} accounts locked"
+
+      # Database connection issues
+      - alert: DatabaseConnectionPoolHigh
+        expr: banking_database_connections_active > 0.8
+        for: 5m
+        labels:
+          severity: warning
+          category: infrastructure
+        annotations:
+          summary: "Database connection pool nearly exhausted"
+          description: "Active connections: {{ $value }}"
+
+      # Large transaction spike
+      - alert: LargeTransactionSpike
+        expr: increase(banking_large_transactions_total[10m]) > 10
+        labels:
+          severity: info
+          category: business
+        annotations:
+          summary: "Spike in large transactions"
+          description: "{{ $value }} large transactions in last 10 minutes"
+
+      # System memory high
+      - alert: HighMemoryUsage
+        expr: system_memory_usage_percent > 85
+        for: 5m
+        labels:
+          severity: warning
+          category: infrastructure
+        annotations:
+          summary: "High memory usage"
+          description: "Memory usage: {{ $value }}%"
+
+      # CPU usage high
+      - alert: HighCPUUsage
+        expr: avg(system_cpu_usage_percent) > 80
+        for: 5m
+        labels:
+          severity: warning
+          category: infrastructure
+        annotations:
+          summary: "High CPU usage"
+          description: "Average CPU usage: {{ $value }}%"
+
+      # Network packet loss
+      - alert: NetworkPacketLoss
+        expr: system_network_packet_loss_percent > 1
+        for: 5m
+        labels:
+          severity: warning
+          category: infrastructure
+        annotations:
+          summary: "Network packet loss detected"
+          description: "Packet loss: {{ $value }}%"
